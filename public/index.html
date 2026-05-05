@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartFinance</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>SmartFinance</h1>
+    <p>Sistema de Gestão Financeira</p>
+  </header>
+
+  <nav>
+    <button onclick="showSection('dashboard')">Dashboard</button>
+    <button onclick="showSection('receitas')">Receitas</button>
+    <button onclick="showSection('despesas')">Despesas</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="section">
+      <h2>Dashboard</h2>
+      <div id="saldo">
+        <p>Carregando saldo...</p>
+      </div>
+    </section>
+
+    <section id="receitas" class="section hidden">
+      <h2>Receitas</h2>
+      <form id="receitaForm">
+        <input type="text" id="receitaDescricao" placeholder="Descrição" required>
+        <input type="number" id="receitaValor" placeholder="Valor" step="0.01" required>
+        <input type="date" id="receitaData" required>
+        <input type="text" id="receitaCategoria" placeholder="Categoria">
+        <button type="submit">Adicionar Receita</button>
+      </form>
+      <ul id="receitasList"></ul>
+    </section>
+
+    <section id="despesas" class="section hidden">
+      <h2>Despesas</h2>
+      <form id="despesaForm">
+        <input type="text" id="despesaDescricao" placeholder="Descrição" required>
+        <input type="number" id="despesaValor" placeholder="Valor" step="0.01" required>
+        <input type="date" id="despesaData" required>
+        <input type="text" id="despesaCategoria" placeholder="Categoria">
+        <button type="submit">Adicionar Despesa</button>
+      </form>
+      <ul id="despesasList"></ul>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
