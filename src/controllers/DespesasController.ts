@@ -69,4 +69,15 @@ export class DespesasController {
         res.json({ changes: this.changes });
       });
   }
+
+  static getByCategoria(req: Request, res: Response) {
+    const { categoria } = req.params;
+    db.all('SELECT * FROM despesas WHERE categoria = ?', [categoria], (err, rows: Despesa[]) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    });
+  }
 }

@@ -15,6 +15,7 @@ router.post('/receitas', ReceitasController.create);
 router.get('/receitas/:id', ReceitasController.getById);
 router.put('/receitas/:id', ReceitasController.update);
 router.delete('/receitas/:id', ReceitasController.delete);
+router.get('/receitas/categoria/:categoria', ReceitasController.getByCategoria);
 
 // Despesas routes
 router.get('/despesas', DespesasController.getAll);
@@ -22,6 +23,7 @@ router.post('/despesas', DespesasController.create);
 router.get('/despesas/:id', DespesasController.getById);
 router.put('/despesas/:id', DespesasController.update);
 router.delete('/despesas/:id', DespesasController.delete);
+router.get('/despesas/categoria/:categoria', DespesasController.getByCategoria);
 
 // Dashboard routes
 router.get('/dashboard/saldo', DashboardController.getSaldo);
