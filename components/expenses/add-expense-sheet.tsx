@@ -12,14 +12,18 @@ export function AddExpenseSheet({ open, onClose, onSave }: { open: boolean; onCl
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<CategoryKey>("food");
   const [date, setDate] = useState(today);
+  const [error, setError] = useState("");
 
   if (!open) return null;
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    onSave({ id: crypto.randomUUID(), title: title.trim(), amount: Number(amount), category, date });
+    const parsedAmount = Number(amount.replace(",", "."));
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return setError("Informe um valor maior que zero.");
+    onSave({ id: crypto.randomUUID(), title: title.trim(), amount: parsedAmount, category, date });
     setTitle("");
     setAmount("");
+    setError("");
   };
 
   return (
@@ -37,6 +41,7 @@ export function AddExpenseSheet({ open, onClose, onSave }: { open: boolean; onCl
             <label><FieldLabel>Categoria</FieldLabel><div className="relative"><select value={category} onChange={(event) => setCategory(event.target.value as CategoryKey)} className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-3 py-3 text-xs font-bold outline-none">{categories.map((item) => <option value={item.key} key={item.key}>{item.name}</option>)}</select><ChevronDown size={14} className="pointer-events-none absolute right-3 top-3.5" /></div></label>
             <label><FieldLabel>Data</FieldLabel><div className="relative"><input required type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-full rounded-2xl border border-slate-200 px-3 py-3 text-xs font-bold outline-none" /><CalendarDays size={14} className="pointer-events-none absolute right-3 top-3.5 bg-white text-slate-400" /></div></label>
           </div>
+          {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-xs font-bold text-red-500">{error}</p>}
           <button className="w-full rounded-2xl bg-forest px-5 py-4 text-sm font-bold text-white">Salvar gasto</button>
         </form>
       </section>
