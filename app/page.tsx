@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { WelcomeScreen } from "@/components/auth/welcome-screen";
+import { CategoriesScreen } from "@/components/screens/categories-screen";
 import { ExpensesScreen } from "@/components/screens/expenses-screen";
 import { HomeScreen } from "@/components/screens/home-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
@@ -37,7 +38,8 @@ export default function SmartFinancePage() {
       <AppShell activeScreen={screen} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)}>
         {screen === "home" && <HomeScreen expenses={expenses} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />}
         {screen === "expenses" && <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />}
-        {screen !== "home" && screen !== "expenses" && <div className="animate-in"><ScreenHeader title={titles[screen]} subtitle="Em construção." /></div>}
+        {screen === "categories" && <CategoriesScreen expenses={expenses} />}
+        {(screen === "budget" || screen === "reports" || screen === "profile") && <div className="animate-in"><ScreenHeader title={titles[screen]} subtitle="Em construção." /></div>}
       </AppShell>
       <AddExpenseSheet open={showAddExpense} onClose={() => setShowAddExpense(false)} onSave={handleAddExpense} />
     </>
