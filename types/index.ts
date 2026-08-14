@@ -18,6 +18,12 @@ export interface Expense {
   note?: string;
 }
 
+export interface UserAccount {
+  name: string;
+  email: string;
+  password: string;
+}
+
 export interface Category {
   key: CategoryKey;
   name: string;

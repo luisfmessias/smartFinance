@@ -3,19 +3,20 @@ import { ExpenseRow } from "@/components/expenses/expense-row";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { categories } from "@/data/mock-data";
 import { formatCurrency, sumExpenses } from "@/lib/format";
-import type { AppScreen, Expense } from "@/types";
+import type { AppScreen, Expense, UserAccount } from "@/types";
 
 const monthlyBudget = 5000;
 
-export function HomeScreen({ expenses, onNavigate, onAddExpense }: { expenses: Expense[]; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
+export function HomeScreen({ account, expenses, onNavigate, onAddExpense }: { account: UserAccount; expenses: Expense[]; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
   const currentPeriod = new Date().toLocaleDateString("en-CA").slice(0, 7);
   const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
   const total = sumExpenses(currentExpenses);
+  const firstName = account.name.split(" ")[0];
   const month = new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date());
   return (
     <div className="animate-in">
       <header className="flex items-center justify-between">
-        <div><p className="text-xs text-slate-500">Olá</p><h1 className="text-lg font-bold">Bom dia!</h1></div>
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-mint font-bold text-forest">{getInitials(account.name)}</div><div><p className="text-xs text-slate-500">Olá, {firstName}</p><h1 className="text-lg font-bold">Bom dia!</h1></div></div>
       </header>
       <section className="mt-6 overflow-hidden rounded-[26px] bg-forest p-5 text-white shadow-card">
         <div className="flex items-start justify-between"><div><p className="text-xs text-white/60">Gastos de {month}</p><p className="mt-2 text-3xl font-bold tracking-tight">{formatCurrency(total)}</p></div><span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold">{month.slice(0, 3)} {new Date().getFullYear()}</span></div>
@@ -39,6 +40,10 @@ export function HomeScreen({ expenses, onNavigate, onAddExpense }: { expenses: E
 
 function EmptyState({ title, text, action, onClick }: { title: string; text: string; action: string; onClick: () => void }) {
   return <div className="rounded-2xl border border-dashed border-leaf/30 bg-mint/60 p-5 text-center"><p className="text-sm font-bold text-forest">{title}</p><p className="mx-auto mt-2 max-w-64 text-xs leading-5 text-slate-500">{text}</p><button onClick={onClick} className="mt-4 rounded-xl bg-forest px-4 py-2.5 text-xs font-bold text-white">{action}</button></div>;
+}
+
+function getInitials(name: string) {
+  return name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
 function QuickCard({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
