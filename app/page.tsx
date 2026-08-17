@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthFlow } from "@/components/auth/auth-flow";
 import { WelcomeScreen } from "@/components/auth/welcome-screen";
@@ -23,11 +23,18 @@ const titles: Record<AppScreen, string> = {
 };
 
 export default function SmartFinancePage() {
-  const [account, setAccount] = useState<UserAccount | null>(() => getActiveAccount());
-  const [started, setStarted] = useState(Boolean(account));
+  const [started, setStarted] = useState(false);
+  const [account, setAccount] = useState<UserAccount | null>(null);
   const [screen, setScreen] = useState<AppScreen>("home");
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [showAddExpense, setShowAddExpense] = useState(false);
+
+  useEffect(() => {
+    const activeAccount = getActiveAccount();
+    if (!activeAccount) return;
+    setAccount(activeAccount);
+    setStarted(true);
+  }, []);
 
   if (!started) return <WelcomeScreen onStart={() => setStarted(true)} />;
   if (!account) return <AuthFlow onAuthenticated={(authenticatedAccount) => {
