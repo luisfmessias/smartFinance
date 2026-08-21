@@ -9,8 +9,7 @@ import { ExpensesScreen } from "@/components/screens/expenses-screen";
 import { HomeScreen } from "@/components/screens/home-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { initialExpenses } from "@/data/mock-data";
-import { clearActiveAccount, getActiveAccount, setActiveAccount } from "@/services/account-service";
+import { clearActiveAccount, getAccountExpenses, getActiveAccount, saveAccountExpenses, setActiveAccount } from "@/services/account-service";
 import type { AppScreen, Expense, UserAccount } from "@/types";
 
 const titles: Record<AppScreen, string> = {
@@ -26,13 +25,14 @@ export default function SmartFinancePage() {
   const [started, setStarted] = useState(false);
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [screen, setScreen] = useState<AppScreen>("home");
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showAddExpense, setShowAddExpense] = useState(false);
 
   useEffect(() => {
     const activeAccount = getActiveAccount();
     if (!activeAccount) return;
     setAccount(activeAccount);
+    setExpenses(getAccountExpenses(activeAccount.email));
     setStarted(true);
   }, []);
 
@@ -40,11 +40,16 @@ export default function SmartFinancePage() {
   if (!account) return <AuthFlow onAuthenticated={(authenticatedAccount) => {
     setActiveAccount(authenticatedAccount);
     setAccount(authenticatedAccount);
+    setExpenses(getAccountExpenses(authenticatedAccount.email));
     setScreen("home");
   }} />;
 
   const handleAddExpense = (expense: Expense) => {
-    setExpenses((current) => [expense, ...current]);
+    setExpenses((current) => {
+      const updated = [expense, ...current];
+      saveAccountExpenses(account.email, updated);
+      return updated;
+    });
     setShowAddExpense(false);
   };
 
