@@ -1,9 +1,10 @@
 import { initialExpenses } from "@/data/mock-data";
-import type { Expense, UserAccount } from "@/types";
+import type { Expense, UserAccount, UserPreferences } from "@/types";
 
 const ACCOUNTS_KEY = "smartfinance.accounts";
 const EXPENSES_KEY = "smartfinance.expenses";
 const SESSION_KEY = "smartfinance.session";
+const PREFERENCES_KEY = "smartfinance.preferences";
 
 const demoAccount: UserAccount = {
   name: "Luís Freitas",
@@ -12,6 +13,20 @@ const demoAccount: UserAccount = {
 };
 
 type ExpensesByEmail = Record<string, Expense[]>;
+type PreferencesByEmail = Record<string, UserPreferences>;
+
+export const defaultPreferences: UserPreferences = {
+  monthlyBudget: 5000,
+  categoryBudgets: {
+    food: 1200,
+    transport: 650,
+    home: 1900,
+    health: 500,
+    leisure: 600,
+    education: 450,
+    other: 400,
+  },
+};
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
@@ -42,6 +57,15 @@ function writeExpenses(expenses: ExpensesByEmail) {
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
 }
 
+function readPreferences(): PreferencesByEmail {
+  const stored = localStorage.getItem(PREFERENCES_KEY);
+  return stored ? JSON.parse(stored) as PreferencesByEmail : {};
+}
+
+function writePreferences(preferences: PreferencesByEmail) {
+  localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
+}
+
 export function registerAccount(account: { name: string; email: string; password: string }): UserAccount {
   const email = normalizeEmail(account.email);
   const accounts = readAccounts();
@@ -50,6 +74,7 @@ export function registerAccount(account: { name: string; email: string; password
   writeAccounts([...accounts, created]);
   const expenses = readExpenses();
   writeExpenses({ ...expenses, [email]: [] });
+  saveAccountPreferences(email, defaultPreferences);
   return created;
 }
 
@@ -74,6 +99,16 @@ export function getAccountExpenses(email: string): Expense[] {
 export function saveAccountExpenses(email: string, accountExpenses: Expense[]) {
   const expenses = readExpenses();
   writeExpenses({ ...expenses, [normalizeEmail(email)]: accountExpenses });
+}
+
+export function getAccountPreferences(email: string): UserPreferences {
+  const preferences = readPreferences();
+  return preferences[normalizeEmail(email)] ?? defaultPreferences;
+}
+
+export function saveAccountPreferences(email: string, accountPreferences: UserPreferences) {
+  const preferences = readPreferences();
+  writePreferences({ ...preferences, [normalizeEmail(email)]: accountPreferences });
 }
 
 export function getActiveAccount(): UserAccount | null {

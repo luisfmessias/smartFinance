@@ -3,11 +3,9 @@ import { ExpenseRow } from "@/components/expenses/expense-row";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { categories } from "@/data/mock-data";
 import { formatCurrency, sumExpenses } from "@/lib/format";
-import type { AppScreen, Expense, UserAccount } from "@/types";
+import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
 
-const monthlyBudget = 5000;
-
-export function HomeScreen({ account, expenses, onNavigate, onAddExpense }: { account: UserAccount; expenses: Expense[]; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
+export function HomeScreen({ account, expenses, preferences, onNavigate, onAddExpense }: { account: UserAccount; expenses: Expense[]; preferences: UserPreferences; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
   const currentPeriod = new Date().toLocaleDateString("en-CA").slice(0, 7);
   const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
   const total = sumExpenses(currentExpenses);
@@ -20,8 +18,8 @@ export function HomeScreen({ account, expenses, onNavigate, onAddExpense }: { ac
       </header>
       <section className="mt-6 overflow-hidden rounded-[26px] bg-forest p-5 text-white shadow-card">
         <div className="flex items-start justify-between"><div><p className="text-xs text-white/60">Gastos de {month}</p><p className="mt-2 text-3xl font-bold tracking-tight">{formatCurrency(total)}</p></div><span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold">{month.slice(0, 3)} {new Date().getFullYear()}</span></div>
-        <div className="mt-7 flex items-center justify-between border-t border-white/10 pt-4"><span className="text-xs text-white/60">Limite mensal <b className="ml-1 text-white">{formatCurrency(monthlyBudget)}</b></span><span className="text-xs text-white/60">{Math.round((total / monthlyBudget) * 100)}% utilizado</span></div>
-        <div className="mt-3 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-leaf" style={{ width: `${Math.min((total / monthlyBudget) * 100, 100)}%` }} /></div>
+        <div className="mt-7 flex items-center justify-between border-t border-white/10 pt-4"><span className="text-xs text-white/60">Limite mensal <b className="ml-1 text-white">{formatCurrency(preferences.monthlyBudget)}</b></span><span className="text-xs text-white/60">{Math.round((total / preferences.monthlyBudget) * 100)}% utilizado</span></div>
+        <div className="mt-3 h-1.5 rounded-full bg-white/10"><div className="h-full rounded-full bg-leaf" style={{ width: `${Math.min((total / preferences.monthlyBudget) * 100, 100)}%` }} /></div>
       </section>
       <section className="mt-5 grid grid-cols-3 gap-3">
         <QuickCard icon={<Target size={17} />} label="Orçamento" onClick={() => onNavigate("budget")} />

@@ -24,6 +24,11 @@ export interface UserAccount {
   password: string;
 }
 
+export interface UserPreferences {
+  monthlyBudget: number;
+  categoryBudgets: Record<CategoryKey, number>;
+}
+
 export interface Category {
   key: CategoryKey;
   name: string;

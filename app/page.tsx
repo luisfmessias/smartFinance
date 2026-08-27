@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthFlow } from "@/components/auth/auth-flow";
 import { WelcomeScreen } from "@/components/auth/welcome-screen";
+import { BudgetScreen } from "@/components/screens/budget-screen";
 import { CategoriesScreen } from "@/components/screens/categories-screen";
 import { ExpensesScreen } from "@/components/screens/expenses-screen";
 import { HomeScreen } from "@/components/screens/home-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { clearActiveAccount, getAccountExpenses, getActiveAccount, saveAccountExpenses, setActiveAccount } from "@/services/account-service";
-import type { AppScreen, Expense, UserAccount } from "@/types";
+import { clearActiveAccount, defaultPreferences, getAccountExpenses, getAccountPreferences, getActiveAccount, saveAccountExpenses, saveAccountPreferences, setActiveAccount } from "@/services/account-service";
+import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
 
 const titles: Record<AppScreen, string> = {
   home: "Início",
@@ -26,6 +27,7 @@ export default function SmartFinancePage() {
   const [account, setAccount] = useState<UserAccount | null>(null);
   const [screen, setScreen] = useState<AppScreen>("home");
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [showAddExpense, setShowAddExpense] = useState(false);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function SmartFinancePage() {
     if (!activeAccount) return;
     setAccount(activeAccount);
     setExpenses(getAccountExpenses(activeAccount.email));
+    setPreferences(getAccountPreferences(activeAccount.email));
     setStarted(true);
   }, []);
 
@@ -41,8 +44,14 @@ export default function SmartFinancePage() {
     setActiveAccount(authenticatedAccount);
     setAccount(authenticatedAccount);
     setExpenses(getAccountExpenses(authenticatedAccount.email));
+    setPreferences(getAccountPreferences(authenticatedAccount.email));
     setScreen("home");
   }} />;
+
+  const handlePreferencesChange = (updatedPreferences: UserPreferences) => {
+    setPreferences(updatedPreferences);
+    saveAccountPreferences(account.email, updatedPreferences);
+  };
 
   const handleAddExpense = (expense: Expense) => {
     setExpenses((current) => {
@@ -61,10 +70,11 @@ export default function SmartFinancePage() {
   return (
     <>
       <AppShell activeScreen={screen} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)}>
-        {screen === "home" && <HomeScreen account={account} expenses={expenses} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />}
+        {screen === "home" && <HomeScreen account={account} expenses={expenses} preferences={preferences} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />}
         {screen === "expenses" && <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />}
         {screen === "categories" && <CategoriesScreen expenses={expenses} />}
-        {(screen === "budget" || screen === "reports") && <div className="animate-in"><ScreenHeader title={titles[screen]} subtitle="Em construção." /></div>}
+        {screen === "budget" && <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />}
+        {screen === "reports" && <div className="animate-in"><ScreenHeader title={titles[screen]} subtitle="Em construção." /></div>}
         {screen === "profile" && (
           <div className="animate-in">
             <ScreenHeader title={titles[screen]} subtitle={account.email} />
