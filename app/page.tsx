@@ -8,6 +8,7 @@ import { BudgetScreen } from "@/components/screens/budget-screen";
 import { CategoriesScreen } from "@/components/screens/categories-screen";
 import { ExpensesScreen } from "@/components/screens/expenses-screen";
 import { HomeScreen } from "@/components/screens/home-screen";
+import { ReportsScreen } from "@/components/screens/reports-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { clearActiveAccount, defaultPreferences, getAccountExpenses, getAccountPreferences, getActiveAccount, saveAccountExpenses, saveAccountPreferences, setActiveAccount } from "@/services/account-service";
@@ -74,7 +75,7 @@ export default function SmartFinancePage() {
         {screen === "expenses" && <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />}
         {screen === "categories" && <CategoriesScreen expenses={expenses} />}
         {screen === "budget" && <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />}
-        {screen === "reports" && <div className="animate-in"><ScreenHeader title={titles[screen]} subtitle="Em construção." /></div>}
+        {screen === "reports" && <ReportsScreen expenses={expenses} />}
         {screen === "profile" && (
           <div className="animate-in">
             <ScreenHeader title={titles[screen]} subtitle={account.email} />
