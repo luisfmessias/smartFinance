@@ -25,6 +25,9 @@ export interface UserAccount {
 }
 
 export interface UserPreferences {
+  budgetAlerts: boolean;
+  monthlySummary: boolean;
+  compactMode: boolean;
   monthlyBudget: number;
   categoryBudgets: Record<CategoryKey, number>;
 }

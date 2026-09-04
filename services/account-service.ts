@@ -16,6 +16,9 @@ type ExpensesByEmail = Record<string, Expense[]>;
 type PreferencesByEmail = Record<string, UserPreferences>;
 
 export const defaultPreferences: UserPreferences = {
+  budgetAlerts: true,
+  monthlySummary: true,
+  compactMode: false,
   monthlyBudget: 5000,
   categoryBudgets: {
     food: 1200,
@@ -82,6 +85,28 @@ export function loginAccount(email: string, password: string): UserAccount {
   const account = readAccounts().find((item) => item.email === normalizeEmail(email) && item.password === password);
   if (!account) throw new Error("E-mail ou senha inválidos.");
   return account;
+}
+
+export function updateAccount(currentEmail: string, updates: Pick<UserAccount, "name" | "email">): UserAccount {
+  const oldEmail = normalizeEmail(currentEmail);
+  const email = normalizeEmail(updates.email);
+  const accounts = readAccounts();
+  if (email !== oldEmail && accounts.some((item) => item.email === email)) throw new Error("Este e-mail já está em uso.");
+  const current = accounts.find((item) => item.email === oldEmail);
+  if (!current) throw new Error("Conta não encontrada.");
+  const updated = { ...current, name: updates.name.trim(), email };
+  writeAccounts(accounts.map((item) => item.email === oldEmail ? updated : item));
+  if (email !== oldEmail) {
+    const expenses = readExpenses();
+    expenses[email] = expenses[oldEmail] ?? [];
+    delete expenses[oldEmail];
+    writeExpenses(expenses);
+    const preferences = readPreferences();
+    preferences[email] = preferences[oldEmail] ?? defaultPreferences;
+    delete preferences[oldEmail];
+    writePreferences(preferences);
+  }
+  return updated;
 }
 
 export function resetAccountPassword(email: string, password: string) {

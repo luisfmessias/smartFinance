@@ -8,20 +8,11 @@ import { BudgetScreen } from "@/components/screens/budget-screen";
 import { CategoriesScreen } from "@/components/screens/categories-screen";
 import { ExpensesScreen } from "@/components/screens/expenses-screen";
 import { HomeScreen } from "@/components/screens/home-screen";
+import { ProfileScreen } from "@/components/screens/profile-screen";
 import { ReportsScreen } from "@/components/screens/reports-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
-import { ScreenHeader } from "@/components/ui/screen-header";
 import { clearActiveAccount, defaultPreferences, getAccountExpenses, getAccountPreferences, getActiveAccount, saveAccountExpenses, saveAccountPreferences, setActiveAccount } from "@/services/account-service";
 import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
-
-const titles: Record<AppScreen, string> = {
-  home: "Início",
-  expenses: "Meus gastos",
-  categories: "Categorias",
-  budget: "Orçamento",
-  reports: "Relatórios",
-  profile: "Meu perfil",
-};
 
 export default function SmartFinancePage() {
   const [started, setStarted] = useState(false);
@@ -49,11 +40,6 @@ export default function SmartFinancePage() {
     setScreen("home");
   }} />;
 
-  const handlePreferencesChange = (updatedPreferences: UserPreferences) => {
-    setPreferences(updatedPreferences);
-    saveAccountPreferences(account.email, updatedPreferences);
-  };
-
   const handleAddExpense = (expense: Expense) => {
     setExpenses((current) => {
       const updated = [expense, ...current];
@@ -63,27 +49,34 @@ export default function SmartFinancePage() {
     setShowAddExpense(false);
   };
 
-  const handleLogout = () => {
-    clearActiveAccount();
-    setAccount(null);
+  const handlePreferencesChange = (updatedPreferences: UserPreferences) => {
+    setPreferences(updatedPreferences);
+    saveAccountPreferences(account.email, updatedPreferences);
+  };
+
+  const screens: Record<AppScreen, React.ReactNode> = {
+    home: <HomeScreen account={account} expenses={expenses} preferences={preferences} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />,
+    expenses: <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />,
+    categories: <CategoriesScreen expenses={expenses} />,
+    budget: <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />,
+    reports: <ReportsScreen expenses={expenses} />,
+    profile: <ProfileScreen account={account} preferences={preferences} onPreferencesChange={handlePreferencesChange} onAccountChange={(updatedAccount) => { setActiveAccount(updatedAccount); setAccount(updatedAccount); }} onLogout={() => { clearActiveAccount(); setAccount(null); }} />,
   };
 
   return (
     <>
-      <AppShell activeScreen={screen} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)}>
-        {screen === "home" && <HomeScreen account={account} expenses={expenses} preferences={preferences} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />}
-        {screen === "expenses" && <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />}
-        {screen === "categories" && <CategoriesScreen expenses={expenses} />}
-        {screen === "budget" && <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />}
-        {screen === "reports" && <ReportsScreen expenses={expenses} />}
-        {screen === "profile" && (
-          <div className="animate-in">
-            <ScreenHeader title={titles[screen]} subtitle={account.email} />
-            <button onClick={handleLogout} className="w-full rounded-2xl border border-red-100 bg-red-50 py-3.5 text-sm font-bold text-red-500">Sair da conta</button>
-          </div>
-        )}
+      <AppShell
+        activeScreen={screen}
+        onNavigate={setScreen}
+        onAddExpense={() => setShowAddExpense(true)}
+      >
+        {screens[screen]}
       </AppShell>
-      <AddExpenseSheet open={showAddExpense} onClose={() => setShowAddExpense(false)} onSave={handleAddExpense} />
+      <AddExpenseSheet
+        open={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        onSave={handleAddExpense}
+      />
     </>
   );
 }

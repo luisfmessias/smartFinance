@@ -1,11 +1,16 @@
-import { ChevronRight, CircleDollarSign, PiggyBank, Target } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Bell, ChevronRight, CircleDollarSign, PiggyBank, Target } from "lucide-react";
 import { ExpenseRow } from "@/components/expenses/expense-row";
 import { CategoryIcon } from "@/components/ui/category-icon";
+import { ModalSheet } from "@/components/ui/modal-sheet";
 import { categories } from "@/data/mock-data";
 import { formatCurrency, sumExpenses } from "@/lib/format";
 import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
 
 export function HomeScreen({ account, expenses, preferences, onNavigate, onAddExpense }: { account: UserAccount; expenses: Expense[]; preferences: UserPreferences; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
+  const [showNotifications, setShowNotifications] = useState(false);
   const currentPeriod = new Date().toLocaleDateString("en-CA").slice(0, 7);
   const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
   const total = sumExpenses(currentExpenses);
@@ -15,6 +20,7 @@ export function HomeScreen({ account, expenses, preferences, onNavigate, onAddEx
     <div className="animate-in">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-mint font-bold text-forest">{getInitials(account.name)}</div><div><p className="text-xs text-slate-500">Olá, {firstName}</p><h1 className="text-lg font-bold">Bom dia!</h1></div></div>
+        <button onClick={() => setShowNotifications(true)} className="rounded-full bg-white p-2.5 shadow-sm" aria-label="Abrir notificações"><Bell size={18} /></button>
       </header>
       <section className="mt-6 overflow-hidden rounded-[26px] bg-forest p-5 text-white shadow-card">
         <div className="flex items-start justify-between"><div><p className="text-xs text-white/60">Gastos de {month}</p><p className="mt-2 text-3xl font-bold tracking-tight">{formatCurrency(total)}</p></div><span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold">{month.slice(0, 3)} {new Date().getFullYear()}</span></div>
@@ -31,7 +37,10 @@ export function HomeScreen({ account, expenses, preferences, onNavigate, onAddEx
         {categories.slice(0, 5).map((category) => <button key={category.key} onClick={() => onNavigate("categories")} className="min-w-[74px] rounded-2xl bg-white px-2 py-3 shadow-sm"><CategoryIcon category={category.key} size="sm" /><p className="mt-2 truncate text-[10px] font-bold text-slate-600">{category.name}</p></button>)}
       </div>
       <SectionTitle title="Gastos recentes" onClick={() => onNavigate("expenses")} />
-      {expenses.length ? <div className="space-y-2">{expenses.slice(0, 4).map((expense) => <ExpenseRow key={expense.id} expense={expense} />)}</div> : <EmptyState title="Registre seu primeiro gasto" text="Comece adicionando uma compra ou conta para acompanhar sua organização." action="Adicionar gasto" onClick={onAddExpense} />}
+      {expenses.length ? <div className={`space-y-2 ${preferences.compactMode ? "[&>button]:py-2" : ""}`}>{expenses.slice(0, 4).map((expense) => <ExpenseRow key={expense.id} expense={expense} />)}</div> : <EmptyState title="Registre seu primeiro gasto" text="Comece adicionando uma compra ou conta para acompanhar sua organização." action="Adicionar gasto" onClick={onAddExpense} />}
+      <ModalSheet open={showNotifications} onClose={() => setShowNotifications(false)} title="Notificações" subtitle="Acompanhe alertas importantes da sua organização.">
+        <div className="space-y-2">{preferences.budgetAlerts && <Notice title={total > preferences.monthlyBudget ? "Limite mensal ultrapassado" : "Orçamento sob controle"} text={total > preferences.monthlyBudget ? "Revise os gastos recentes para retomar seu planejamento." : `Você ainda possui ${formatCurrency(preferences.monthlyBudget - total)} disponíveis neste mês.`} />}{preferences.monthlySummary && <Notice title="Resumo mensal" text={total ? `Você registrou ${currentExpenses.length} gastos neste mês.` : "Adicione seu primeiro gasto para receber análises da sua rotina."} />}{!preferences.budgetAlerts && !preferences.monthlySummary && <Notice title="Notificações pausadas" text="Ative os avisos novamente nas preferências do perfil." />}</div>
+      </ModalSheet>
     </div>
   );
 }
@@ -42,6 +51,10 @@ function EmptyState({ title, text, action, onClick }: { title: string; text: str
 
 function getInitials(name: string) {
   return name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+function Notice({ title, text }: { title: string; text: string }) {
+  return <div className="rounded-2xl border border-slate-100 p-4"><p className="text-sm font-bold">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></div>;
 }
 
 function QuickCard({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
