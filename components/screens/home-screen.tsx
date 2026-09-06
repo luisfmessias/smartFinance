@@ -9,7 +9,7 @@ import { categories } from "@/data/mock-data";
 import { formatCurrency, sumExpenses } from "@/lib/format";
 import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
 
-export function HomeScreen({ account, expenses, preferences, onNavigate, onAddExpense }: { account: UserAccount; expenses: Expense[]; preferences: UserPreferences; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void }) {
+export function HomeScreen({ account, expenses, preferences, onNavigate, onAddExpense, onEditExpense }: { account: UserAccount; expenses: Expense[]; preferences: UserPreferences; onNavigate: (screen: AppScreen) => void; onAddExpense: () => void; onEditExpense: (expense: Expense) => void }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const currentPeriod = new Date().toLocaleDateString("en-CA").slice(0, 7);
   const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
@@ -37,7 +37,7 @@ export function HomeScreen({ account, expenses, preferences, onNavigate, onAddEx
         {categories.slice(0, 5).map((category) => <button key={category.key} onClick={() => onNavigate("categories")} className="min-w-[74px] rounded-2xl bg-white px-2 py-3 shadow-sm"><CategoryIcon category={category.key} size="sm" /><p className="mt-2 truncate text-[10px] font-bold text-slate-600">{category.name}</p></button>)}
       </div>
       <SectionTitle title="Gastos recentes" onClick={() => onNavigate("expenses")} />
-      {expenses.length ? <div className={`space-y-2 ${preferences.compactMode ? "[&>button]:py-2" : ""}`}>{expenses.slice(0, 4).map((expense) => <ExpenseRow key={expense.id} expense={expense} />)}</div> : <EmptyState title="Registre seu primeiro gasto" text="Comece adicionando uma compra ou conta para acompanhar sua organização." action="Adicionar gasto" onClick={onAddExpense} />}
+      {expenses.length ? <div className={`space-y-2 ${preferences.compactMode ? "[&>button]:py-2" : ""}`}>{expenses.slice(0, 4).map((expense) => <ExpenseRow key={expense.id} expense={expense} onClick={() => onEditExpense(expense)} />)}</div> : <EmptyState title="Registre seu primeiro gasto" text="Comece adicionando uma compra ou conta para acompanhar sua organização." action="Adicionar gasto" onClick={onAddExpense} />}
       <ModalSheet open={showNotifications} onClose={() => setShowNotifications(false)} title="Notificações" subtitle="Acompanhe alertas importantes da sua organização.">
         <div className="space-y-2">{preferences.budgetAlerts && <Notice title={total > preferences.monthlyBudget ? "Limite mensal ultrapassado" : "Orçamento sob controle"} text={total > preferences.monthlyBudget ? "Revise os gastos recentes para retomar seu planejamento." : `Você ainda possui ${formatCurrency(preferences.monthlyBudget - total)} disponíveis neste mês.`} />}{preferences.monthlySummary && <Notice title="Resumo mensal" text={total ? `Você registrou ${currentExpenses.length} gastos neste mês.` : "Adicione seu primeiro gasto para receber análises da sua rotina."} />}{!preferences.budgetAlerts && !preferences.monthlySummary && <Notice title="Notificações pausadas" text="Ative os avisos novamente nas preferências do perfil." />}</div>
       </ModalSheet>

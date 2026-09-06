@@ -21,6 +21,7 @@ export default function SmartFinancePage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
 
   useEffect(() => {
     const activeAccount = getActiveAccount();
@@ -42,11 +43,29 @@ export default function SmartFinancePage() {
 
   const handleAddExpense = (expense: Expense) => {
     setExpenses((current) => {
-      const updated = [expense, ...current];
+      const updated = editingExpense
+        ? current.map((item) => item.id === expense.id ? expense : item)
+        : [expense, ...current];
       saveAccountExpenses(account.email, updated);
       return updated;
     });
     setShowAddExpense(false);
+    setEditingExpense(null);
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses((current) => {
+      const updated = current.filter((expense) => expense.id !== expenseId);
+      saveAccountExpenses(account.email, updated);
+      return updated;
+    });
+    setShowAddExpense(false);
+    setEditingExpense(null);
+  };
+
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setShowAddExpense(true);
   };
 
   const handlePreferencesChange = (updatedPreferences: UserPreferences) => {
@@ -55,8 +74,8 @@ export default function SmartFinancePage() {
   };
 
   const screens: Record<AppScreen, React.ReactNode> = {
-    home: <HomeScreen account={account} expenses={expenses} preferences={preferences} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />,
-    expenses: <ExpensesScreen expenses={expenses} onAddExpense={() => setShowAddExpense(true)} />,
+    home: <HomeScreen account={account} expenses={expenses} preferences={preferences} onEditExpense={handleEditExpense} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />,
+    expenses: <ExpensesScreen expenses={expenses} onEditExpense={handleEditExpense} onAddExpense={() => setShowAddExpense(true)} />,
     categories: <CategoriesScreen expenses={expenses} />,
     budget: <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />,
     reports: <ReportsScreen expenses={expenses} />,
@@ -68,14 +87,16 @@ export default function SmartFinancePage() {
       <AppShell
         activeScreen={screen}
         onNavigate={setScreen}
-        onAddExpense={() => setShowAddExpense(true)}
+        onAddExpense={() => { setEditingExpense(null); setShowAddExpense(true); }}
       >
         {screens[screen]}
       </AppShell>
       <AddExpenseSheet
         open={showAddExpense}
-        onClose={() => setShowAddExpense(false)}
+        expense={editingExpense}
+        onClose={() => { setShowAddExpense(false); setEditingExpense(null); }}
         onSave={handleAddExpense}
+        onDelete={handleDeleteExpense}
       />
     </>
   );
