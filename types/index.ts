@@ -21,7 +21,7 @@ export interface Expense {
 export interface UserAccount {
   name: string;
   email: string;
-  password: string;
+  passwordHash: string;
 }
 
 export interface UserPreferences {

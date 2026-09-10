@@ -9,7 +9,7 @@ const PREFERENCES_KEY = "smartfinance.preferences";
 const demoAccount: UserAccount = {
   name: "Luís Freitas",
   email: "luis@email.com",
-  password: "123456",
+  passwordHash: "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
 };
 
 type ExpensesByEmail = Record<string, Expense[]>;
@@ -32,6 +32,12 @@ export const defaultPreferences: UserPreferences = {
 };
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+async function hashPassword(password: string) {
+  const bytes = new TextEncoder().encode(password);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 function readAccounts(): UserAccount[] {
   const stored = localStorage.getItem(ACCOUNTS_KEY);
@@ -69,11 +75,11 @@ function writePreferences(preferences: PreferencesByEmail) {
   localStorage.setItem(PREFERENCES_KEY, JSON.stringify(preferences));
 }
 
-export function registerAccount(account: { name: string; email: string; password: string }): UserAccount {
+export async function registerAccount(account: { name: string; email: string; password: string }): Promise<UserAccount> {
   const email = normalizeEmail(account.email);
   const accounts = readAccounts();
   if (accounts.some((item) => item.email === email)) throw new Error("Este e-mail já possui uma conta.");
-  const created = { name: account.name.trim(), email, password: account.password };
+  const created = { name: account.name.trim(), email, passwordHash: await hashPassword(account.password) };
   writeAccounts([...accounts, created]);
   const expenses = readExpenses();
   writeExpenses({ ...expenses, [email]: [] });
@@ -81,9 +87,16 @@ export function registerAccount(account: { name: string; email: string; password
   return created;
 }
 
-export function loginAccount(email: string, password: string): UserAccount {
-  const account = readAccounts().find((item) => item.email === normalizeEmail(email) && item.password === password);
+export async function loginAccount(email: string, password: string): Promise<UserAccount> {
+  const accounts = readAccounts();
+  const passwordHash = await hashPassword(password);
+  const account = accounts.find((item) => item.email === normalizeEmail(email) && (item.passwordHash === passwordHash || (item as UserAccount & { password?: string }).password === password));
   if (!account) throw new Error("E-mail ou senha inválidos.");
+  if (!account.passwordHash) {
+    const migrated = { name: account.name, email: account.email, passwordHash };
+    writeAccounts(accounts.map((item) => item.email === account.email ? migrated : item));
+    return migrated;
+  }
   return account;
 }
 
@@ -109,11 +122,12 @@ export function updateAccount(currentEmail: string, updates: Pick<UserAccount, "
   return updated;
 }
 
-export function resetAccountPassword(email: string, password: string) {
+export async function resetAccountPassword(email: string, password: string) {
   const normalizedEmail = normalizeEmail(email);
   const accounts = readAccounts();
   if (!accounts.some((item) => item.email === normalizedEmail)) throw new Error("Não encontramos uma conta com este e-mail.");
-  writeAccounts(accounts.map((item) => item.email === normalizedEmail ? { ...item, password } : item));
+  const passwordHash = await hashPassword(password);
+  writeAccounts(accounts.map((item) => item.email === normalizedEmail ? { name: item.name, email: item.email, passwordHash } : item));
 }
 
 export function getAccountExpenses(email: string): Expense[] {

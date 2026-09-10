@@ -24,14 +24,14 @@ export function AuthFlow({ onAuthenticated }: { onAuthenticated: (account: UserA
     reset: ["Redefinir senha", "Escolha uma nova senha para acessar sua conta."],
   }[mode];
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
     if (mode === "forgot") return setMode("reset");
     if (mode === "reset") {
       if (password !== confirmPassword) return setError("As senhas precisam ser iguais.");
       try {
-        resetAccountPassword(email, password);
+        await resetAccountPassword(email, password);
         setPassword("");
         setConfirmPassword("");
         return setMode("login");
@@ -41,8 +41,8 @@ export function AuthFlow({ onAuthenticated }: { onAuthenticated: (account: UserA
     }
     try {
       const account = mode === "register"
-        ? registerAccount({ name, email, password })
-        : loginAccount(email, password);
+        ? await registerAccount({ name, email, password })
+        : await loginAccount(email, password);
       onAuthenticated(account);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Não foi possível continuar.");
