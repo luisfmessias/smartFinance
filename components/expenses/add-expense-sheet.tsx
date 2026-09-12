@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronDown, Trash2, X } from "lucide-react";
 import { categories } from "@/data/mock-data";
+import { createExpense } from "@/services/expense-service";
 import type { CategoryKey, Expense } from "@/types";
 
 const today = () => new Date().toLocaleDateString("en-CA");
@@ -24,12 +25,12 @@ export function AddExpenseSheet({ open, expense, onClose, onSave, onDelete }: { 
 
   if (!open) return null;
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const parsedAmount = Number(amount.replace(",", "."));
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return setError("Informe um valor maior que zero.");
     const updatedExpense = { id: expense?.id ?? crypto.randomUUID(), title: title.trim(), amount: parsedAmount, category, date };
-    onSave(updatedExpense);
+    onSave(await createExpense(updatedExpense));
     setTitle("");
     setAmount("");
   };
