@@ -131,8 +131,12 @@ export async function resetAccountPassword(email: string, password: string) {
 }
 
 export function getAccountExpenses(email: string): Expense[] {
+  const normalizedEmail = normalizeEmail(email);
   const expenses = readExpenses();
-  return expenses[normalizeEmail(email)] ?? [];
+  const accountExpenses = expenses[normalizedEmail] ?? [];
+  const sanitized = accountExpenses.filter((expense) => Number.isFinite(expense.amount) && expense.amount > 0);
+  if (sanitized.length !== accountExpenses.length) writeExpenses({ ...expenses, [normalizedEmail]: sanitized });
+  return sanitized;
 }
 
 export function saveAccountExpenses(email: string, accountExpenses: Expense[]) {
