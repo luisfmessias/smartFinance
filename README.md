@@ -45,7 +45,7 @@ http://localhost:3000
 
 ## API opcional
 
-A interface funciona com dados locais no navegador. A API Express existe apenas como base para uma futura integracao.
+A interface funciona com dados locais no navegador. A API Express existe apenas como base para uma futura integração.
 
 Para rodar a API:
 
@@ -100,6 +100,6 @@ Para limpar os dados, use as ferramentas do navegador ou limpe o armazenamento l
 
 ## Observacoes
 
-- O app e focado em gerenciamento de gastos, nao em entrada e saida completa de dinheiro.
+- O app é focado em gerenciamento de gastos, não em entrada e saída completa de dinheiro.
 - Cada conta possui seus proprios gastos, preferencias e orcamentos.
 - A senha e salva localmente como hash apenas para o prototipo. Em producao, a autenticacao deve ser substituida por uma solucao segura no backend.
