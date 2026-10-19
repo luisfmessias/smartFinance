@@ -16,7 +16,7 @@ Sistema mobile-first para organizar gastos pessoais. O projeto foi feito com Nex
 Abra o terminal na pasta do projeto:
 
 ```bash
-cd C:\Users\Freitas\Desktop\SmartFinance
+cd C:\Users\user\Desktop\SmartFinance
 ```
 
 Instale as dependencias:
