@@ -1,6 +1,6 @@
 # SmartFinance
 
-Sistema mobile-first para organizar gastos pessoais. O projeto foi feito com Next.js, React, TypeScript, Tailwind CSS e uma API Express opcional preparada para futura integracao com banco de dados.
+Sistema mobile-first para organizar gastos pessoais. O projeto foi feito com Next.js, React, TypeScript, Tailwind CSS e uma API Express opcional preparada para futura integração com banco de dados.
 
 ## Tecnologias
 
