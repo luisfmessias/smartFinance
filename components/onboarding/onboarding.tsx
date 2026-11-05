@@ -58,7 +58,7 @@ function useCountUp(target: number) {
   return value;
 }
 
-export function Onboarding({ hasAccount, initialLimit, onSkip, onFinish }: { hasAccount: boolean; initialLimit: number; onSkip: () => void; onFinish: (result: { monthlyBudget: number; useLimit: boolean }) => void }) {
+export function Onboarding({ initialLimit, onSkip, onFinish }: { initialLimit: number; onSkip: () => void; onFinish: (result: { monthlyBudget: number; useLimit: boolean }) => void }) {
   const [step, setStep] = useState(0);
   const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
   const [limit, setLimit] = useState(Math.min(Math.max(Math.round(initialLimit / 100) * 100, MIN_LIMIT), MAX_LIMIT));
@@ -109,10 +109,9 @@ export function Onboarding({ hasAccount, initialLimit, onSkip, onFinish }: { has
           {step > 0 && <button onClick={() => go(step - 1)} aria-label="Etapa anterior" className="glass flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full"><ArrowLeft size={19} /></button>}
           {step < LAST_STEP
             ? <button onClick={() => go(step + 1)} className="btn-primary">Continuar <ArrowRight size={18} /></button>
-            : <button onClick={() => onFinish({ monthlyBudget: limit, useLimit: true })} className="btn-primary">{hasAccount ? "Usar este limite" : "Criar minha conta"} <ArrowRight size={18} /></button>}
+            : <button onClick={() => onFinish({ monthlyBudget: limit, useLimit: true })} className="btn-primary">Usar este limite <ArrowRight size={18} /></button>}
         </div>
-        {step === LAST_STEP && hasAccount && <button onClick={() => onFinish({ monthlyBudget: limit, useLimit: false })} className="text-center text-sm font-medium text-sage hover:text-mist">Voltar sem alterar meu limite</button>}
-        {step === LAST_STEP && !hasAccount && <p className="text-center text-sm text-sage">Já possui uma conta? <button onClick={() => onFinish({ monthlyBudget: limit, useLimit: false })} className="font-medium text-mist underline-offset-4 hover:underline">Entrar</button></p>}
+        {step === LAST_STEP && <button onClick={() => onFinish({ monthlyBudget: limit, useLimit: false })} className="text-center text-sm font-medium text-sage hover:text-mist">Manter o limite padrão</button>}
       </footer>
     </main>
   );

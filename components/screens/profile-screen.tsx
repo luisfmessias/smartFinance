@@ -18,7 +18,7 @@ const startScreens: { value: AppScreen; label: string }[] = [
 ];
 const categoryOptions = categories.map((category): { value: CategoryKey; label: string } => ({ value: category.key, label: category.name }));
 
-export function ProfileScreen({ account, preferences, onPreferencesChange, onAccountChange, onLogout, onSessionError, onReplayIntro }: { account: UserAccount; preferences: UserPreferences; onPreferencesChange: (preferences: UserPreferences) => void; onAccountChange: (account: UserAccount) => void; onLogout: () => Promise<void>; onSessionError: (error: unknown) => never; onReplayIntro: () => void }) {
+export function ProfileScreen({ account, preferences, onPreferencesChange, onAccountChange, onLogout, onSessionError }: { account: UserAccount; preferences: UserPreferences; onPreferencesChange: (preferences: UserPreferences) => void; onAccountChange: (account: UserAccount) => void; onLogout: () => Promise<void>; onSessionError: (error: unknown) => never }) {
   const [panel, setPanel] = useState<string | null>(null);
   const [feedback, setFeedback] = useState("");
   const [name, setName] = useState(account.name);
@@ -84,7 +84,7 @@ export function ProfileScreen({ account, preferences, onPreferencesChange, onAcc
             <Options label="Categoria padrão de novos gastos" value={preferences.defaultCategory} options={categoryOptions} onChange={(defaultCategory) => update({ defaultCategory })} />
           </div>
         )}
-        {panel === "Ajuda e suporte" && <div className="space-y-2"><Action label="Rever a introdução" onClick={onReplayIntro} /><Action label="Perguntas frequentes" onClick={() => setFeedback("A central de ajuda será conectada na próxima integração.")} /><Action label="Falar com o suporte" onClick={() => setFeedback("Atendimento disponível de segunda a sexta, das 9h às 18h.")} /><Action label="Termos de uso" onClick={() => setFeedback("Termos de uso atualizados em junho de 2026.")} /></div>}
+        {panel === "Ajuda e suporte" && <div className="space-y-2"><Action label="Perguntas frequentes" onClick={() => setFeedback("A central de ajuda será conectada na próxima integração.")} /><Action label="Falar com o suporte" onClick={() => setFeedback("Atendimento disponível de segunda a sexta, das 9h às 18h.")} /><Action label="Termos de uso" onClick={() => setFeedback("Termos de uso atualizados em junho de 2026.")} /></div>}
         {feedback && <p role="status" className="alert-success mt-4">{feedback}</p>}
       </ModalSheet>
     </div>
