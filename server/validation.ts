@@ -38,6 +38,11 @@ export const preferencesSchema = z.object({
   budgetAlerts: z.boolean(),
   monthlySummary: z.boolean(),
   compactMode: z.boolean(),
+  hideValues: z.boolean(),
+  reduceMotion: z.boolean(),
+  alertThreshold: z.number().int().min(50, "Aviso inválido.").max(100, "Aviso inválido."),
+  startScreen: z.enum(["home", "expenses", "categories", "budget", "reports", "profile"], { error: "Tela inválida." }),
+  defaultCategory: z.enum(categoryKeys, { error: "Categoria inválida." }),
   monthlyBudget: budget,
   categoryBudgets: z.record(z.enum(categoryKeys), budget),
 });

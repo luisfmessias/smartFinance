@@ -1,32 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { ExpenseRow } from "@/components/expenses/expense-row";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Money } from "@/components/ui/money";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { ModalSheet } from "@/components/ui/modal-sheet";
 import { categories } from "@/data/categories";
-import { formatCurrency, sumExpenses } from "@/lib/format";
+import { formatDayLabel, sumExpenses } from "@/lib/format";
 import type { CategoryKey, Expense } from "@/types";
 
-export function ExpensesScreen({ expenses, onEditExpense, onAddExpense }: { expenses: Expense[]; onEditExpense: (expense: Expense) => void; onAddExpense: () => void }) {
+function groupByDay(expenses: Expense[]) {
+  const groups = new Map<string, Expense[]>();
+  for (const expense of expenses) groups.set(expense.date, [...(groups.get(expense.date) ?? []), expense]);
+  return [...groups];
+}
+
+export function ExpensesScreen({ expenses, compact, onEditExpense, onAddExpense }: { expenses: Expense[]; compact: boolean; onEditExpense: (expense: Expense) => void; onAddExpense: () => void }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<CategoryKey | "all">("all");
-  const [showFilters, setShowFilters] = useState(false);
   const filtered = expenses.filter((expense) => expense.title.toLowerCase().includes(search.toLowerCase()) && (category === "all" || expense.category === category));
+  const filtering = Boolean(search) || category !== "all";
+
   return (
     <div className="animate-in">
-      <ScreenHeader title="Meus gastos" subtitle={`${expenses.length} lançamentos registrados`} />
-      <div className="rounded-3xl bg-forest p-5 text-white"><p className="text-xs text-white/60">Total no período</p><p className="mt-2 text-2xl font-bold">{formatCurrency(sumExpenses(filtered))}</p></div>
-      <div className="mt-5 flex gap-2"><label className="flex flex-1 items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-sm"><Search size={17} className="text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar gasto" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label><button onClick={() => setShowFilters(true)} className={`rounded-2xl p-3 shadow-sm ${category === "all" ? "bg-white" : "bg-mint text-leaf"}`} aria-label="Filtrar gastos"><SlidersHorizontal size={18} /></button></div>
-      {filtered.length ? <div className="mt-5 space-y-2">{filtered.map((expense) => <ExpenseRow key={expense.id} expense={expense} onClick={() => onEditExpense(expense)} />)}</div> : <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-white p-5 text-center"><p className="text-sm font-bold">{expenses.length ? "Nenhum gasto encontrado" : "Você ainda não registrou gastos"}</p><p className="mt-2 text-xs leading-5 text-slate-500">{expenses.length ? "Tente ajustar a busca ou remover os filtros." : "Adicione seu primeiro lançamento para começar."}</p>{!expenses.length && <button onClick={onAddExpense} className="mt-4 rounded-xl bg-forest px-4 py-2.5 text-xs font-bold text-white">Adicionar gasto</button>}</div>}
-      <ModalSheet open={showFilters} onClose={() => setShowFilters(false)} title="Filtrar gastos" subtitle="Mostre apenas os gastos de uma categoria.">
-        <div className="space-y-2"><FilterOption label="Todas as categorias" active={category === "all"} onClick={() => { setCategory("all"); setShowFilters(false); }} />{categories.map((item) => <FilterOption key={item.key} label={item.name} active={category === item.key} onClick={() => { setCategory(item.key); setShowFilters(false); }} />)}</div>
-      </ModalSheet>
+      <ScreenHeader title="Meus gastos" subtitle={`${expenses.length} ${expenses.length === 1 ? "lançamento" : "lançamentos"}`} />
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px] lg:items-start lg:gap-5">
+        <div className="flex min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-1">
+          <label className="glass flex items-center gap-3 rounded-full px-4 py-3">
+            <Search size={18} strokeWidth={1.8} className="shrink-0 text-sage" />
+            <input aria-label="Buscar gasto" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar gasto" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-sage" />
+          </label>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0">
+            <Filter label="Todos" active={category === "all"} onClick={() => setCategory("all")} />
+            {categories.map((item) => <Filter key={item.key} label={item.name} active={category === item.key} onClick={() => setCategory(item.key)} />)}
+          </div>
+        </div>
+
+        <section className="glass rounded-[28px] p-5 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <p className="text-sm text-sage">{filtering ? "Total filtrado" : "Total registrado"}</p>
+          <Money value={sumExpenses(filtered)} className="mt-1 block text-3xl leading-tight" />
+        </section>
+
+        <section className="glass min-w-0 rounded-[28px] p-3 lg:col-start-1">
+          {filtered.length ? (
+            <div className="flex flex-col gap-3">
+              {groupByDay(filtered).map(([date, items]) => (
+                <div key={date}>
+                  <h2 className="px-2 pb-1 pt-1 text-sm text-sage">{formatDayLabel(date)}</h2>
+                  <div className="divide-y divide-white/10">{items.map((expense) => <ExpenseRow key={expense.id} expense={expense} compact={compact} hideDate onClick={() => onEditExpense(expense)} />)}</div>
+                </div>
+              ))}
+            </div>
+          ) : expenses.length
+            ? <EmptyState title="Nenhum gasto encontrado" text="Tente outra busca ou remova o filtro." />
+            : <EmptyState title="Você ainda não registrou gastos" text="Adicione seu primeiro lançamento para começar." action="Adicionar gasto" onClick={onAddExpense} />}
+        </section>
+      </div>
     </div>
   );
 }
 
-function FilterOption({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return <button onClick={onClick} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-bold ${active ? "border-leaf bg-mint text-forest" : "border-slate-100"}`}>{label}{active && <Check size={16} className="text-leaf" />}</button>;
+function Filter({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return <button onClick={onClick} aria-pressed={active} className={`shrink-0 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${active ? "bg-lime text-pine" : "glass"}`}>{label}</button>;
 }

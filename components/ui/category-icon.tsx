@@ -1,25 +1,29 @@
-import { BookOpen, Bus, HeartPulse, Home, MoreHorizontal, Popcorn, Utensils } from "lucide-react";
-import { categories } from "@/data/categories";
+import { BookOpen, Bus, Gift, HeartPulse, Home, MoreHorizontal, PawPrint, Plane, Popcorn, Receipt, Repeat, Shirt, ShoppingCart, Sparkles, Utensils } from "lucide-react";
 import type { CategoryKey } from "@/types";
 
-const icons = {
+const icons: Record<CategoryKey, typeof Home> = {
   food: Utensils,
+  groceries: ShoppingCart,
   transport: Bus,
   home: Home,
+  bills: Receipt,
   health: HeartPulse,
+  beauty: Sparkles,
+  clothing: Shirt,
   leisure: Popcorn,
+  subscriptions: Repeat,
+  travel: Plane,
   education: BookOpen,
+  pets: PawPrint,
+  gifts: Gift,
   other: MoreHorizontal,
 };
 
-export function CategoryIcon({ category, size = "md" }: { category: CategoryKey; size?: "sm" | "md" | "lg" }) {
+export function CategoryIcon({ category }: { category: CategoryKey }) {
   const Icon = icons[category];
-  const details = categories.find((item) => item.key === category)!;
-  const dimensions = size === "lg" ? "h-12 w-12" : size === "sm" ? "h-9 w-9" : "h-10 w-10";
-
   return (
-    <div className={`flex ${dimensions} shrink-0 items-center justify-center rounded-2xl`} style={{ backgroundColor: details.softColor }}>
-      <Icon size={size === "lg" ? 20 : 17} strokeWidth={2.2} style={{ color: details.color }} />
+    <div className="well flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px]">
+      <Icon size={17} strokeWidth={1.8} />
     </div>
   );
 }

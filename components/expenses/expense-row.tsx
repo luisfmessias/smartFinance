@@ -3,16 +3,18 @@ import { categories } from "@/data/categories";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import type { Expense } from "@/types";
 
-export function ExpenseRow({ expense, onClick }: { expense: Expense; onClick?: () => void }) {
+export function ExpenseRow({ expense, onClick, compact = false, hideDate = false }: { expense: Expense; onClick?: () => void; compact?: boolean; hideDate?: boolean }) {
   const category = categories.find((item) => item.key === expense.category)!;
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-sm">
-      <CategoryIcon category={expense.category} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-ink">{expense.title}</p>
-        <p className="mt-1 text-[11px] text-slate-400">{category.name} · {formatShortDate(expense.date)}</p>
-      </div>
-      <span className="text-sm font-bold text-ink">-{formatCurrency(expense.amount)}</span>
-    </button>
+    <div>
+      <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-2xl px-2 text-left transition-colors hover:bg-white/5 ${compact ? "py-1.5" : "py-2.5"}`}>
+        <CategoryIcon category={expense.category} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{expense.title}</p>
+          <p className="text-sm text-sage">{hideDate ? category.name : `${category.name} · ${formatShortDate(expense.date)}`}</p>
+        </div>
+        <span className="sensitive shrink-0 font-medium">-{formatCurrency(expense.amount)}</span>
+      </button>
+    </div>
   );
 }

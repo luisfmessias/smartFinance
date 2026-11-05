@@ -60,6 +60,12 @@ Para alterar o schema, edite o arquivo e crie uma migração:
 npm run db:migrate -- --name descricao-da-mudanca
 ```
 
+Para aplicar migrações pendentes manualmente:
+
+```bash
+npx prisma migrate deploy
+```
+
 Na Vercel, as migrações pendentes são aplicadas durante o build (`vercel-build`). Isso vale também para deploys de Preview, que usam o mesmo banco.
 
 ## API
