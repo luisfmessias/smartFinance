@@ -1,58 +1,128 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, CalendarDays, Check } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { CategoryBreakdown } from "@/components/expenses/category-breakdown";
+import { Money } from "@/components/ui/money";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { ModalSheet } from "@/components/ui/modal-sheet";
-import { categories } from "@/data/categories";
-import { formatCurrency, sumExpenses } from "@/lib/format";
-import type { Expense } from "@/types";
+import { capitalize, formatCurrency, sumExpenses } from "@/lib/format";
+import { errorMessage } from "@/services/api-client";
+import type { Expense, UserAccount, UserPreferences } from "@/types";
 
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
 
-export function ReportsScreen({ expenses }: { expenses: Expense[] }) {
+export function ReportsScreen({ account, expenses, preferences }: { account: UserAccount; expenses: Expense[]; preferences: UserPreferences }) {
   const periods = useMemo(() => getPeriods(), []);
-  const [period, setPeriod] = useState(periods[0].key);
-  const [showPeriods, setShowPeriods] = useState(false);
+  const [periodIndex, setPeriodIndex] = useState(0);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const { key: period, label: periodLabel } = periods[periodIndex];
   const filtered = expenses.filter((expense) => expense.date.startsWith(period));
   const total = sumExpenses(filtered);
   const previousTotal = sumExpenses(expenses.filter((expense) => expense.date.startsWith(getPreviousPeriod(period))));
   const change = previousTotal ? Math.round(((total - previousTotal) / previousTotal) * 100) : null;
-  const buckets = getMonthBuckets(period);
-  const bucketTotals = buckets.map((bucket) => sumExpenses(filtered.filter((expense) => {
-    const day = Number(expense.date.slice(-2));
-    return day >= bucket.start && day <= bucket.end;
-  })));
-  const highestBucket = Math.max(...bucketTotals, 1);
+  const buckets = getMonthBuckets(period).map((bucket) => ({
+    ...bucket,
+    total: sumExpenses(filtered.filter((expense) => {
+      const day = Number(expense.date.slice(-2));
+      return day >= bucket.start && day <= bucket.end;
+    })),
+  }));
+  const highest = Math.max(...buckets.map((bucket) => bucket.total));
+  const active = hovered ?? buckets.findIndex((bucket) => bucket.total === highest);
+  const activeBucket = buckets[active];
+
+  const changePeriod = (index: number) => {
+    setPeriodIndex(index);
+    setHovered(null);
+    setExportError("");
+  };
+
+  const exportPdf = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      const { downloadReportPdf } = await import("@/lib/report-pdf");
+      await downloadReportPdf({ account, period, periodLabel, expenses: filtered, previousTotal, preferences });
+    } catch (error) {
+      setExportError(errorMessage(error));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="animate-in">
-      <ScreenHeader title="Relatórios" subtitle="Uma visão clara para decidir melhor." />
-      <button onClick={() => setShowPeriods(true)} className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm"><span className="flex items-center gap-2 text-xs font-bold text-slate-600"><CalendarDays size={16} className="text-leaf" /> {getPeriodLabel(period)}</span><span className="text-xs font-bold text-leaf">Alterar</span></button>
-      <section className="mt-4 rounded-3xl bg-white p-5 shadow-sm">
-        <div className="flex justify-between"><div><p className="text-xs text-slate-400">Gastos no período</p><p className="mt-2 text-2xl font-bold">{formatCurrency(total)}</p></div>{change !== null && <span className={`flex h-fit items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${change <= 0 ? "bg-mint text-leaf" : "bg-red-50 text-red-500"}`}>{change <= 0 ? <ArrowDownRight size={13} /> : <ArrowUpRight size={13} />}{Math.abs(change)}%</span>}</div>
-        {total ? <div className="mt-8 flex h-28 items-end justify-between gap-2">{bucketTotals.map((bucketTotal, index) => <div key={buckets[index].label} className="flex h-full flex-1 flex-col items-center justify-end gap-2"><div className="w-full rounded-t-md bg-leaf/80" style={{ height: `${Math.max((bucketTotal / highestBucket) * 80, bucketTotal ? 8 : 2)}%` }} /><span className="text-[9px] text-slate-400">{buckets[index].label}</span></div>)}</div> : <p className="mt-8 rounded-2xl bg-slate-50 p-4 text-center text-xs leading-5 text-slate-500">Nenhum gasto registrado neste mês.</p>}
-      </section>
-      <h2 className="mb-3 mt-6 text-sm font-bold">Maiores categorias</h2>
-      {total ? <div className="space-y-2">{categories.map((category) => { const spent = sumExpenses(filtered.filter((expense) => expense.category === category.key)); return spent ? <div key={category.key} className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm"><span className="flex items-center gap-2 text-xs font-bold"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: category.color }} />{category.name}</span><span className="text-sm font-bold">{formatCurrency(spent)}</span></div> : null; })}</div> : <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-xs text-slate-500">As categorias aparecerão quando você adicionar gastos.</p>}
-      {change !== null && <div className={`mt-5 flex items-center gap-3 rounded-2xl p-4 ${change <= 0 ? "bg-mint text-forest" : "bg-red-50 text-red-600"}`}>{change <= 0 ? <ArrowDownRight size={20} /> : <ArrowUpRight size={20} />}<p className="text-xs leading-5"><b>{change <= 0 ? "Bom trabalho!" : "Atenção ao ritmo."}</b> Seus gastos {change <= 0 ? "diminuíram" : "aumentaram"} em relação ao mês passado.</p></div>}
-      <ModalSheet open={showPeriods} onClose={() => setShowPeriods(false)} title="Selecionar período" subtitle="Escolha o mês que deseja analisar.">
-        <div className="space-y-2">{periods.map((item) => <button key={item.key} onClick={() => { setPeriod(item.key); setShowPeriods(false); }} className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-sm font-bold ${item.key === period ? "border-leaf bg-mint text-forest" : "border-slate-100"}`}>{item.label}{item.key === period && <Check size={17} className="text-leaf" />}</button>)}</div>
-      </ModalSheet>
+      <ScreenHeader title="Relatórios" subtitle="Compare seus meses." />
+
+      <div className="mb-4 flex gap-2 lg:mb-5 lg:max-w-md">
+        <div className="glass flex min-w-0 flex-1 items-center justify-between rounded-full p-1">
+          <button onClick={() => changePeriod(periodIndex + 1)} disabled={periodIndex === periods.length - 1} aria-label="Mês anterior" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-30"><ChevronLeft size={18} /></button>
+          <span className="truncate text-sm font-medium">{capitalize(periodLabel)}</span>
+          <button onClick={() => changePeriod(periodIndex - 1)} disabled={periodIndex === 0} aria-label="Próximo mês" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-30"><ChevronRight size={18} /></button>
+        </div>
+        <button onClick={() => void exportPdf()} disabled={!total || exporting} aria-label="Baixar relatório em PDF" className="glass flex shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium disabled:opacity-50">
+          <FileDown size={17} strokeWidth={1.8} /> {exporting ? "Gerando" : "PDF"}
+        </button>
+      </div>
+      {exportError && <p role="alert" className="alert-error mb-4">{exportError}</p>}
+
+      <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr] lg:items-start lg:gap-5">
+        <section className="glass rounded-[28px] p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm text-sage">Total do mês</p>
+              <Money value={total} className="mt-1 block text-3xl leading-tight" />
+            </div>
+            {change !== null && (
+              <span className={`well mt-1 flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium ${change > 0 ? "text-coral" : "text-lime"}`}>
+                {change > 0 ? <ArrowUpRight size={15} /> : <ArrowDownRight size={15} />}{Math.abs(change)}%
+              </span>
+            )}
+          </div>
+          {change !== null && <p className="mt-1 text-sm text-sage">{change > 0 ? "A mais" : "A menos"} que no mês anterior</p>}
+
+          {total ? (
+            <div className="mt-6">
+              <p className="text-sm text-sage">Dias {activeBucket.start} a {activeBucket.end}: <span className="sensitive font-medium text-mist">{formatCurrency(activeBucket.total)}</span></p>
+              <div className="mt-3 flex h-36 items-end gap-1.5 border-b border-white/15" onMouseLeave={() => setHovered(null)}>
+                {buckets.map((bucket, index) => (
+                  <button
+                    key={bucket.label}
+                    onMouseEnter={() => setHovered(index)}
+                    onFocus={() => setHovered(index)}
+                    onBlur={() => setHovered(null)}
+                    onClick={() => setHovered(index)}
+                    aria-label={`Dias ${bucket.start} a ${bucket.end}: ${formatCurrency(bucket.total)}`}
+                    className="flex h-full flex-1 items-end justify-center"
+                  >
+                    <span className={`block w-full max-w-7 rounded-t-[4px] transition-colors ${index === active ? "bg-lime" : "bg-lime/35"}`} style={{ height: bucket.total ? `max(${(bucket.total / highest) * 100}%, 4px)` : 0 }} />
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 flex gap-1.5">{buckets.map((bucket) => <span key={bucket.label} className="flex-1 text-center text-xs text-sage">{bucket.start}</span>)}</div>
+            </div>
+          ) : <p className="well mt-6 rounded-2xl p-4 text-center text-sm text-sage">Nenhum gasto registrado neste mês.</p>}
+        </section>
+
+        {total > 0 && (
+          <section className="glass rounded-[28px] p-5">
+            <h2 className="mb-4 font-semibold tracking-tight">Maiores categorias</h2>
+            <CategoryBreakdown expenses={filtered} hideEmpty />
+          </section>
+        )}
+      </div>
     </div>
   );
 }
 
 function getPeriods() {
-  return Array.from({ length: 6 }, (_, index) => {
+  return Array.from({ length: 12 }, (_, index) => {
     const date = new Date();
     date.setMonth(date.getMonth() - index, 1);
     return { key: date.toLocaleDateString("en-CA").slice(0, 7), label: monthFormatter.format(date) };
   });
-}
-
-function getPeriodLabel(period: string) {
-  return monthFormatter.format(new Date(`${period}-01T12:00:00`));
 }
 
 function getPreviousPeriod(period: string) {

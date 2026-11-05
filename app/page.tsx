@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
+import { NavigationProvider, useScreenHistory } from "@/components/layout/navigation";
 import { AuthFlow } from "@/components/auth/auth-flow";
 import { WelcomeScreen } from "@/components/auth/welcome-screen";
 import { BudgetScreen } from "@/components/screens/budget-screen";
@@ -11,7 +12,9 @@ import { HomeScreen } from "@/components/screens/home-screen";
 import { ProfileScreen } from "@/components/screens/profile-screen";
 import { ReportsScreen } from "@/components/screens/reports-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
+import { Onboarding } from "@/components/onboarding/onboarding";
 import { Logo } from "@/components/ui/logo";
+import { hasSeenOnboarding, markOnboardingSeen } from "@/lib/onboarding";
 import { defaultPreferences } from "@/lib/preferences";
 import { ApiRequestError, errorMessage } from "@/services/api-client";
 import { getCurrentAccount, logoutAccount } from "@/services/auth-service";
@@ -26,9 +29,13 @@ export default function SmartFinancePage() {
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [started, setStarted] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [introJustSeen, setIntroJustSeen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [plannedBudget, setPlannedBudget] = useState<number | null>(null);
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [account, setAccount] = useState<UserAccount | null>(null);
-  const [screen, setScreen] = useState<AppScreen>("home");
+  const { screen, navigate, reset, navigation } = useScreenHistory();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -41,6 +48,8 @@ export default function SmartFinancePage() {
     setShowAddExpense(false);
     setEditingExpense(null);
     setNotice("");
+    setAuthMode("login");
+    setIntroJustSeen(false);
   }, []);
 
   const loadAccount = useCallback(async (loadedAccount: UserAccount) => {
@@ -49,7 +58,8 @@ export default function SmartFinancePage() {
     setPreferences(loadedPreferences);
     setAccount(loadedAccount);
     setStarted(true);
-  }, []);
+    reset(loadedPreferences.startScreen);
+  }, [reset]);
 
   const restoreSession = useCallback(async () => {
     setLoading(true);
@@ -57,6 +67,7 @@ export default function SmartFinancePage() {
     try {
       const currentAccount = await getCurrentAccount();
       if (currentAccount) await loadAccount(currentAccount);
+      if (!hasSeenOnboarding()) setShowOnboarding(true);
     } catch (error) {
       setLoadError(errorMessage(error));
     } finally {
@@ -76,18 +87,56 @@ export default function SmartFinancePage() {
     void restoreSession();
   }, [restoreSession]);
 
-  if (loading) return <main className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center bg-forest" aria-busy="true"><Logo light /></main>;
+  useEffect(() => {
+    document.documentElement.dataset.hideValues = String(preferences.hideValues);
+    document.documentElement.dataset.reduceMotion = String(preferences.reduceMotion);
+  }, [preferences.hideValues, preferences.reduceMotion]);
+
+  if (loading) return <main className="flex min-h-dvh items-center justify-center" aria-busy="true"><Logo /></main>;
   if (loadError) return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-white px-6 text-center">
+    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col items-center justify-center gap-5 px-6 text-center">
       <Logo />
-      <p className="text-sm leading-6 text-slate-500">{loadError}</p>
-      <button onClick={() => void restoreSession()} className="rounded-2xl bg-forest px-5 py-3 text-sm font-bold text-white">Tentar novamente</button>
+      <p className="leading-6 text-sage">{loadError}</p>
+      <button onClick={() => void restoreSession()} className="btn-primary">Tentar novamente</button>
     </main>
   );
+  if (showOnboarding) return (
+    <Onboarding
+      hasAccount={Boolean(account)}
+      initialLimit={account ? preferences.monthlyBudget : 3000}
+      onSkip={() => {
+        markOnboardingSeen();
+        setShowOnboarding(false);
+        setIntroJustSeen(true);
+      }}
+      onFinish={({ monthlyBudget, useLimit }) => {
+        markOnboardingSeen();
+        setShowOnboarding(false);
+        setIntroJustSeen(true);
+        if (account) {
+          if (!useLimit) return;
+          const updated = { ...preferences, monthlyBudget };
+          setPreferences(updated);
+          savePreferences(updated).catch((error) => {
+            setPreferences(preferences);
+            setNotice(errorMessage(error));
+          });
+          return;
+        }
+        setPlannedBudget(useLimit ? monthlyBudget : null);
+        setAuthMode(useLimit ? "register" : "login");
+        setStarted(true);
+      }}
+    />
+  );
   if (!started) return <WelcomeScreen onStart={() => setStarted(true)} />;
-  if (!account) return <AuthFlow resetToken={resetToken} onResetDone={() => setResetToken(null)} onAuthenticated={async (authenticatedAccount) => {
+  if (!account) return <AuthFlow resetToken={resetToken} initialMode={authMode} onResetDone={() => setResetToken(null)} onAuthenticated={async (authenticatedAccount, isNewAccount) => {
+    // Falhar aqui não pode impedir a entrada: o limite pode ser ajustado depois.
+    if (isNewAccount && plannedBudget) await savePreferences({ ...defaultPreferences, monthlyBudget: plannedBudget }).catch(() => undefined);
+    setPlannedBudget(null);
     await loadAccount(authenticatedAccount);
-    setScreen("home");
+    // Conta nova sempre vê a introdução, exceto se acabou de passar por ela antes do cadastro.
+    if (isNewAccount ? !introJustSeen : !hasSeenOnboarding()) setShowOnboarding(true);
   }} />;
 
   const closeExpenseSheet = () => {
@@ -133,32 +182,37 @@ export default function SmartFinancePage() {
     clearSession();
   };
 
+  const logoutFromSheet = () => {
+    handleLogout().catch((error) => setNotice(errorMessage(error)));
+  };
+
   const screens: Record<AppScreen, React.ReactNode> = {
-    home: <HomeScreen account={account} expenses={expenses} preferences={preferences} onEditExpense={handleEditExpense} onNavigate={setScreen} onAddExpense={() => setShowAddExpense(true)} />,
-    expenses: <ExpensesScreen expenses={expenses} onEditExpense={handleEditExpense} onAddExpense={() => setShowAddExpense(true)} />,
+    home: <HomeScreen account={account} expenses={expenses} preferences={preferences} onEditExpense={handleEditExpense} onNavigate={navigate} onAddExpense={() => setShowAddExpense(true)} onPreferencesChange={handlePreferencesChange} onLogout={logoutFromSheet} />,
+    expenses: <ExpensesScreen expenses={expenses} compact={preferences.compactMode} onEditExpense={handleEditExpense} onAddExpense={() => setShowAddExpense(true)} />,
     categories: <CategoriesScreen expenses={expenses} />,
     budget: <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />,
-    reports: <ReportsScreen expenses={expenses} />,
-    profile: <ProfileScreen account={account} preferences={preferences} onPreferencesChange={handlePreferencesChange} onAccountChange={setAccount} onLogout={handleLogout} onSessionError={handleSessionError} />,
+    reports: <ReportsScreen account={account} expenses={expenses} preferences={preferences} />,
+    profile: <ProfileScreen account={account} preferences={preferences} onPreferencesChange={handlePreferencesChange} onAccountChange={setAccount} onLogout={handleLogout} onSessionError={handleSessionError} onReplayIntro={() => setShowOnboarding(true)} />,
   };
 
   return (
-    <>
+    <NavigationProvider value={navigation}>
       <AppShell
         activeScreen={screen}
-        onNavigate={setScreen}
+        onNavigate={navigate}
         onAddExpense={() => { setEditingExpense(null); setShowAddExpense(true); }}
       >
-        {notice && <p role="alert" className="mb-4 rounded-2xl bg-red-50 px-4 py-3 text-xs font-bold text-red-500">{notice}</p>}
+        {notice && <p role="alert" className="alert-error mb-4">{notice}</p>}
         {screens[screen]}
       </AppShell>
       <AddExpenseSheet
         open={showAddExpense}
         expense={editingExpense}
+        defaultCategory={preferences.defaultCategory}
         onClose={closeExpenseSheet}
         onSave={handleSaveExpense}
         onDelete={handleDeleteExpense}
       />
-    </>
+    </NavigationProvider>
   );
 }

@@ -1,28 +1,31 @@
-import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
+import { Money } from "@/components/ui/money";
+import { Progress } from "@/components/ui/progress";
 
 export function WelcomeScreen({ onStart }: { onStart: () => void }) {
+  const month = new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date());
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col overflow-hidden bg-forest px-7 pb-8 pt-14 text-white">
-      <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-leaf/25 blur-3xl" />
-      <div className="relative flex justify-center"><Logo light /></div>
-      <section className="relative mt-auto min-w-0 max-w-full pb-10">
-        <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-medium">
-          <ShieldCheck size={15} /> Organização sem complicação
-        </span>
-        <h1 className="max-w-full break-words text-4xl font-bold leading-tight tracking-tight">Seus gastos sob controle. Sua vida mais leve.</h1>
-        <p className="mt-4 text-sm leading-6 text-white/70">
-          Acompanhe seus gastos, crie limites e tome decisões melhores com uma visão simples da sua rotina financeira.
-        </p>
-        <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/80">
-          <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-300" /> Fácil de usar</span>
-          <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-300" /> Feito para você</span>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] lg:max-w-5xl lg:px-10">
+      <Logo />
+      <div className="flex flex-1 flex-col justify-end gap-10 pt-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
+        <div aria-hidden="true" className="animate-in lg:order-2">
+          <div className="glass mx-auto max-w-sm rounded-[30px] p-6">
+            <p className="text-sm text-sage">Gastos de {month}</p>
+            <Money value={2480.9} className="mt-1 block text-[40px] leading-tight" />
+            <div className="mt-6"><Progress ratio={0.5} /></div>
+            <div className="mt-3 flex justify-between text-sm text-sage"><span>Limite de R$ 5.000</span><span>50%</span></div>
+          </div>
         </div>
-      </section>
-      <button onClick={onStart} className="relative flex min-w-0 max-w-full items-center justify-center gap-2 rounded-2xl bg-leaf px-5 py-4 text-sm font-bold shadow-lg shadow-black/10 transition active:scale-[0.98]">
-        Começar agora <ArrowRight size={17} />
-      </button>
-      <p className="relative mt-4 text-center text-xs text-white/55">Já possui uma conta? <button onClick={onStart} className="font-bold text-white">Entrar</button></p>
+        <section>
+          <h1 className="text-[40px] font-semibold leading-[1.08] tracking-tight [text-wrap:balance] lg:text-6xl">Seus gastos sob controle. Sua vida mais leve.</h1>
+          <p className="mt-4 max-w-md leading-6 text-sage">Registre o que gastou, defina limites e veja para onde seu dinheiro está indo.</p>
+          <div className="mt-8 flex max-w-sm flex-col gap-4">
+            <button onClick={onStart} className="btn-primary">Começar agora <ArrowRight size={18} /></button>
+            <p className="text-center text-sm text-sage">Já possui uma conta? <button onClick={onStart} className="font-medium text-mist underline-offset-4 hover:underline">Entrar</button></p>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }

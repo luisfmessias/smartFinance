@@ -1,6 +1,7 @@
 import "server-only";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { Prisma, PrismaClient, type Expense as ExpenseRow, type UserPreferences as PreferencesRow } from "@/generated/prisma";
+import { PrismaClient, type Expense as ExpenseRow, type UserPreferences as PreferencesRow } from "@/generated/prisma";
+import { defaultPreferences } from "@/lib/preferences";
 import type { Expense, ExpenseInput, UserPreferences } from "@/types";
 import { EmailTakenError, type DataStore } from "./types";
 
@@ -16,7 +17,8 @@ function getClient() {
   return shared.smartfinancePrisma;
 }
 
-const hasCode = (error: unknown, code: string) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;
+// Compara o código, e não a classe: o hot reload pode criar uma segunda cópia da classe de erro.
+const hasCode = (error: unknown, code: string) => (error as { code?: unknown } | null)?.code === code;
 
 /** Devolve null quando o registro não existe (P2025). */
 const orNull = <Result>(operation: Promise<Result>) => operation.catch((error) => {
@@ -47,12 +49,12 @@ const toExpenseData = ({ title, amount, category, date, note }: ExpenseInput) =>
   note: note ?? null,
 });
 
-const toPreferences = ({ budgetAlerts, monthlySummary, compactMode, monthlyBudget, categoryBudgets }: PreferencesRow): UserPreferences => ({
-  budgetAlerts,
-  monthlySummary,
-  compactMode,
+const toPreferences = ({ userId: _userId, monthlyBudget, categoryBudgets, startScreen, ...preferences }: PreferencesRow): UserPreferences => ({
+  ...preferences,
+  startScreen: startScreen as UserPreferences["startScreen"],
   monthlyBudget: monthlyBudget.toNumber(),
-  categoryBudgets: categoryBudgets as unknown as UserPreferences["categoryBudgets"],
+  // Quem salvou antes de uma categoria existir recebe o limite padrão dela.
+  categoryBudgets: { ...defaultPreferences.categoryBudgets, ...(categoryBudgets as Partial<UserPreferences["categoryBudgets"]>) },
 });
 
 export const prismaStore: DataStore = {

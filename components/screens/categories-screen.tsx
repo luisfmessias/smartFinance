@@ -1,23 +1,37 @@
-import { CategoryIcon } from "@/components/ui/category-icon";
+import { CategoryBreakdown } from "@/components/expenses/category-breakdown";
+import { Money } from "@/components/ui/money";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { categories } from "@/data/categories";
-import { formatCurrency, sumExpenses } from "@/lib/format";
+import { currentPeriod, sumExpenses } from "@/lib/format";
 import type { Expense } from "@/types";
 
 export function CategoriesScreen({ expenses }: { expenses: Expense[] }) {
-  const currentPeriod = new Date().toLocaleDateString("en-CA").slice(0, 7);
-  const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
+  const period = currentPeriod();
+  const currentExpenses = expenses.filter((expense) => expense.date.startsWith(period));
   const total = sumExpenses(currentExpenses);
+  const month = new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(new Date());
+  const unused = categories.filter((category) => !currentExpenses.some((expense) => expense.category === category.key));
+
   return (
     <div className="animate-in">
-      <ScreenHeader title="Categorias" subtitle="Entenda para onde seu dinheiro está indo." />
-      {!total && <p className="mb-4 rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-xs leading-5 text-slate-500">Adicione gastos para visualizar a distribuição por categoria.</p>}
-      <div className="space-y-3">
-        {categories.map((category) => {
-          const spent = sumExpenses(currentExpenses.filter((expense) => expense.category === category.key));
-          const percentage = total ? Math.round((spent / total) * 100) : 0;
-          return <div key={category.key} className="rounded-2xl bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><CategoryIcon category={category.key} /><div className="flex-1"><div className="flex items-center justify-between"><p className="text-sm font-bold">{category.name}</p><p className="text-sm font-bold">{formatCurrency(spent)}</p></div><p className="mt-1 text-[11px] text-slate-400">{percentage}% dos gastos do período</p></div></div><div className="mt-3 h-1.5 rounded-full bg-slate-100"><div className="h-full rounded-full" style={{ width: `${percentage}%`, backgroundColor: category.color }} /></div></div>;
-        })}
+      <ScreenHeader title="Categorias" subtitle="Para onde seu dinheiro está indo." />
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr] lg:items-start lg:gap-5">
+        <section className="glass rounded-[28px] p-5">
+          <p className="text-sm text-sage">Total de {month}</p>
+          <Money value={total} className="mt-1 block text-3xl leading-tight" />
+          {!total && <p className="mt-2 text-sm leading-5 text-sage">Adicione gastos para ver a distribuição do mês.</p>}
+        </section>
+        {total > 0 && (
+          <section className="glass rounded-[28px] p-5">
+            <CategoryBreakdown expenses={currentExpenses} hideEmpty />
+            {unused.length > 0 && (
+              <div className="mt-5 border-t border-white/10 pt-4">
+                <h2 className="text-sm text-sage">Sem gastos neste mês</h2>
+                <div className="mt-2 flex flex-wrap gap-1.5">{unused.map((category) => <span key={category.key} className="well rounded-full px-3 py-1 text-sm">{category.name}</span>)}</div>
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );
