@@ -4,8 +4,8 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Pencil } from "lucide-react";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { categories } from "@/data/mock-data";
-import { formatCurrency, sumExpenses } from "@/lib/format";
+import { categories } from "@/data/categories";
+import { formatCurrency, parseAmount, sumExpenses } from "@/lib/format";
 import { ModalSheet } from "@/components/ui/modal-sheet";
 import type { CategoryKey, Expense, UserPreferences } from "@/types";
 
@@ -17,7 +17,7 @@ export function BudgetScreen({ expenses, preferences, onPreferencesChange }: { e
   const currentExpenses = expenses.filter((expense) => expense.date.startsWith(currentPeriod));
   const openEditor = (key: CategoryKey | "monthly", currentValue: number) => { setEditing(key); setValue(String(currentValue)); setError(""); };
   const save = () => {
-    const parsed = Number(value.replace(",", "."));
+    const parsed = parseAmount(value);
     if (!Number.isFinite(parsed) || parsed <= 0 || !editing) return setError("Informe um limite maior que zero.");
     onPreferencesChange(editing === "monthly" ? { ...preferences, monthlyBudget: parsed } : { ...preferences, categoryBudgets: { ...preferences.categoryBudgets, [editing]: parsed } });
     setEditing(null);

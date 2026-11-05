@@ -1,5 +1,5 @@
 import { BookOpen, Bus, HeartPulse, Home, MoreHorizontal, Popcorn, Utensils } from "lucide-react";
-import { categories } from "@/data/mock-data";
+import { categories } from "@/data/categories";
 import type { CategoryKey } from "@/types";
 
 const icons = {

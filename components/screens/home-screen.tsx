@@ -5,7 +5,7 @@ import { Bell, ChevronRight, CircleDollarSign, PiggyBank, Target } from "lucide-
 import { ExpenseRow } from "@/components/expenses/expense-row";
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { ModalSheet } from "@/components/ui/modal-sheet";
-import { categories } from "@/data/mock-data";
+import { categories } from "@/data/categories";
 import { formatCurrency, sumExpenses } from "@/lib/format";
 import type { AppScreen, Expense, UserAccount, UserPreferences } from "@/types";
 
@@ -19,7 +19,7 @@ export function HomeScreen({ account, expenses, preferences, onNavigate, onAddEx
   return (
     <div className="animate-in">
       <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-mint font-bold text-forest">{getInitials(account.name)}</div><div><p className="text-xs text-slate-500">Olá, {firstName}</p><h1 className="text-lg font-bold">Bom dia!</h1></div></div>
+        <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-mint font-bold text-forest">{getInitials(account.name)}</div><div><p className="text-xs text-slate-500">Olá, {firstName}</p><h1 className="text-lg font-bold">{getGreeting()}</h1></div></div>
         <button onClick={() => setShowNotifications(true)} className="rounded-full bg-white p-2.5 shadow-sm" aria-label="Abrir notificações"><Bell size={18} /></button>
       </header>
       <section className="mt-6 overflow-hidden rounded-[26px] bg-forest p-5 text-white shadow-card">
@@ -47,6 +47,11 @@ export function HomeScreen({ account, expenses, preferences, onNavigate, onAddEx
 
 function EmptyState({ title, text, action, onClick }: { title: string; text: string; action: string; onClick: () => void }) {
   return <div className="rounded-2xl border border-dashed border-leaf/30 bg-mint/60 p-5 text-center"><p className="text-sm font-bold text-forest">{title}</p><p className="mx-auto mt-2 max-w-64 text-xs leading-5 text-slate-500">{text}</p><button onClick={onClick} className="mt-4 rounded-xl bg-forest px-4 py-2.5 text-xs font-bold text-white">{action}</button></div>;
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? "Bom dia!" : hour < 18 ? "Boa tarde!" : "Boa noite!";
 }
 
 function getInitials(name: string) {

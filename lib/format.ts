@@ -8,3 +8,9 @@ export const formatShortDate = (value: string) =>
 
 export const sumExpenses = (values: { amount: number }[]) =>
   values.reduce((total, expense) => total + expense.amount, 0);
+
+/** Aceita "1.234,56", "1234,56" e "12.50". */
+export const parseAmount = (value: string) => {
+  const trimmed = value.trim();
+  return Number(trimmed.includes(",") ? trimmed.replace(/\./g, "").replace(",", ".") : trimmed);
+};
