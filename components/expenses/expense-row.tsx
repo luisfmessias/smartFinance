@@ -1,5 +1,5 @@
 import { CategoryIcon } from "@/components/ui/category-icon";
-import { categories } from "@/data/mock-data";
+import { categories } from "@/data/categories";
 import { formatCurrency, formatShortDate } from "@/lib/format";
 import type { Expense } from "@/types";
 

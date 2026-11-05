@@ -18,10 +18,12 @@ export interface Expense {
   note?: string;
 }
 
+export type ExpenseInput = Omit<Expense, "id">;
+
 export interface UserAccount {
+  id: string;
   name: string;
   email: string;
-  passwordHash: string;
 }
 
 export interface UserPreferences {

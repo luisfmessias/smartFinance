@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, CalendarDays, Check } from "lucide-react";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { ModalSheet } from "@/components/ui/modal-sheet";
-import { categories } from "@/data/mock-data";
+import { categories } from "@/data/categories";
 import { formatCurrency, sumExpenses } from "@/lib/format";
 import type { Expense } from "@/types";
 

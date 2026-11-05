@@ -1,21 +1,14 @@
-import type { Expense } from "@/types";
+import { api } from "@/services/api-client";
+import type { Expense, ExpenseInput } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+type ExpenseResponse = { expense: Expense };
 
-export async function getExpenses(fallback: Expense[]): Promise<Expense[]> {
-  if (!API_URL) return fallback;
-  const response = await fetch(`${API_URL}/expenses`);
-  if (!response.ok) throw new Error("Não foi possível carregar os gastos.");
-  return response.json();
-}
+export const getExpenses = () => api<{ expenses: Expense[] }>("/expenses").then(({ expenses }) => expenses);
 
-export async function createExpense(expense: Expense): Promise<Expense> {
-  if (!API_URL) return expense;
-  const response = await fetch(`${API_URL}/expenses`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(expense),
-  });
-  if (!response.ok) throw new Error("Não foi possível salvar o gasto.");
-  return response.json();
-}
+export const createExpense = (body: ExpenseInput) =>
+  api<ExpenseResponse>("/expenses", { method: "POST", body }).then(({ expense }) => expense);
+
+export const updateExpense = (id: string, body: ExpenseInput) =>
+  api<ExpenseResponse>(`/expenses/${id}`, { method: "PATCH", body }).then(({ expense }) => expense);
+
+export const deleteExpense = (id: string) => api(`/expenses/${id}`, { method: "DELETE" });

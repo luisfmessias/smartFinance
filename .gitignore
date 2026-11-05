@@ -1,5 +1,7 @@
 node_modules
 .next
-.env
+generated
+.env*
+!.env.example
 dist
 npm-debug.log*

@@ -1,6 +1,6 @@
 import { CategoryIcon } from "@/components/ui/category-icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { categories } from "@/data/mock-data";
+import { categories } from "@/data/categories";
 import { formatCurrency, sumExpenses } from "@/lib/format";
 import type { Expense } from "@/types";
 
