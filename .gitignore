@@ -5,3 +5,4 @@ generated
 !.env.example
 dist
 npm-debug.log*
+*.tsbuildinfo

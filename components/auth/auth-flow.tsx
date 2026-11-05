@@ -9,8 +9,8 @@ import type { UserAccount } from "@/types";
 
 type AuthMode = "login" | "register" | "forgot" | "reset";
 
-export function AuthFlow({ resetToken, initialMode = "login", onResetDone, onAuthenticated }: { resetToken: string | null; initialMode?: "login" | "register"; onResetDone: () => void; onAuthenticated: (account: UserAccount, isNewAccount: boolean) => Promise<void> }) {
-  const [mode, setMode] = useState<AuthMode>(resetToken ? "reset" : initialMode);
+export function AuthFlow({ resetToken, onResetDone, onAuthenticated }: { resetToken: string | null; onResetDone: () => void; onAuthenticated: (account: UserAccount, isNewAccount: boolean) => Promise<void> }) {
+  const [mode, setMode] = useState<AuthMode>(resetToken ? "reset" : "login");
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

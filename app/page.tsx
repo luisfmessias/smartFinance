@@ -14,7 +14,6 @@ import { ReportsScreen } from "@/components/screens/reports-screen";
 import { AddExpenseSheet } from "@/components/expenses/add-expense-sheet";
 import { Onboarding } from "@/components/onboarding/onboarding";
 import { Logo } from "@/components/ui/logo";
-import { hasSeenOnboarding, markOnboardingSeen } from "@/lib/onboarding";
 import { defaultPreferences } from "@/lib/preferences";
 import { ApiRequestError, errorMessage } from "@/services/api-client";
 import { getCurrentAccount, logoutAccount } from "@/services/auth-service";
@@ -30,9 +29,6 @@ export default function SmartFinancePage() {
   const [notice, setNotice] = useState("");
   const [started, setStarted] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [introJustSeen, setIntroJustSeen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [plannedBudget, setPlannedBudget] = useState<number | null>(null);
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [account, setAccount] = useState<UserAccount | null>(null);
   const { screen, navigate, reset, navigation } = useScreenHistory();
@@ -48,8 +44,7 @@ export default function SmartFinancePage() {
     setShowAddExpense(false);
     setEditingExpense(null);
     setNotice("");
-    setAuthMode("login");
-    setIntroJustSeen(false);
+    setShowOnboarding(false);
   }, []);
 
   const loadAccount = useCallback(async (loadedAccount: UserAccount) => {
@@ -67,7 +62,6 @@ export default function SmartFinancePage() {
     try {
       const currentAccount = await getCurrentAccount();
       if (currentAccount) await loadAccount(currentAccount);
-      if (!hasSeenOnboarding()) setShowOnboarding(true);
     } catch (error) {
       setLoadError(errorMessage(error));
     } finally {
@@ -102,41 +96,25 @@ export default function SmartFinancePage() {
   );
   if (showOnboarding) return (
     <Onboarding
-      hasAccount={Boolean(account)}
-      initialLimit={account ? preferences.monthlyBudget : 3000}
-      onSkip={() => {
-        markOnboardingSeen();
-        setShowOnboarding(false);
-        setIntroJustSeen(true);
-      }}
+      initialLimit={preferences.monthlyBudget}
+      onSkip={() => setShowOnboarding(false)}
       onFinish={({ monthlyBudget, useLimit }) => {
-        markOnboardingSeen();
         setShowOnboarding(false);
-        setIntroJustSeen(true);
-        if (account) {
-          if (!useLimit) return;
-          const updated = { ...preferences, monthlyBudget };
-          setPreferences(updated);
-          savePreferences(updated).catch((error) => {
-            setPreferences(preferences);
-            setNotice(errorMessage(error));
-          });
-          return;
-        }
-        setPlannedBudget(useLimit ? monthlyBudget : null);
-        setAuthMode(useLimit ? "register" : "login");
-        setStarted(true);
+        if (!useLimit) return;
+        const updated = { ...preferences, monthlyBudget };
+        setPreferences(updated);
+        savePreferences(updated).catch((error) => {
+          setPreferences(preferences);
+          setNotice(errorMessage(error));
+        });
       }}
     />
   );
   if (!started) return <WelcomeScreen onStart={() => setStarted(true)} />;
-  if (!account) return <AuthFlow resetToken={resetToken} initialMode={authMode} onResetDone={() => setResetToken(null)} onAuthenticated={async (authenticatedAccount, isNewAccount) => {
-    // Falhar aqui não pode impedir a entrada: o limite pode ser ajustado depois.
-    if (isNewAccount && plannedBudget) await savePreferences({ ...defaultPreferences, monthlyBudget: plannedBudget }).catch(() => undefined);
-    setPlannedBudget(null);
+  if (!account) return <AuthFlow resetToken={resetToken} onResetDone={() => setResetToken(null)} onAuthenticated={async (authenticatedAccount, isNewAccount) => {
     await loadAccount(authenticatedAccount);
-    // Conta nova sempre vê a introdução, exceto se acabou de passar por ela antes do cadastro.
-    if (isNewAccount ? !introJustSeen : !hasSeenOnboarding()) setShowOnboarding(true);
+    // A introdução aparece apenas logo depois de criar a conta.
+    setShowOnboarding(isNewAccount);
   }} />;
 
   const closeExpenseSheet = () => {
@@ -192,7 +170,7 @@ export default function SmartFinancePage() {
     categories: <CategoriesScreen expenses={expenses} />,
     budget: <BudgetScreen expenses={expenses} preferences={preferences} onPreferencesChange={handlePreferencesChange} />,
     reports: <ReportsScreen account={account} expenses={expenses} preferences={preferences} />,
-    profile: <ProfileScreen account={account} preferences={preferences} onPreferencesChange={handlePreferencesChange} onAccountChange={setAccount} onLogout={handleLogout} onSessionError={handleSessionError} onReplayIntro={() => setShowOnboarding(true)} />,
+    profile: <ProfileScreen account={account} preferences={preferences} onPreferencesChange={handlePreferencesChange} onAccountChange={setAccount} onLogout={handleLogout} onSessionError={handleSessionError} />,
   };
 
   return (
